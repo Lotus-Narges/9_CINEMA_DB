@@ -1,0 +1,104 @@
+a. Informations d’un film (id_film) : titre, année, durée (au format HH:MM) et réalisateur
+    # For the run_time whe have in DB, they are in INTEGER Datatype -> we change the format of run_time HH:MM
+    SELECT Film.title, Film.release_year,
+    CASE
+        # Hour & Minutes -> Single digit
+        WHEN FLOOR(Film.run_time/60) < 10 AND (Film.run_time%60) < 10 THEN CONCAT('0', FLOOR(Film.run_time/60), ':', '0', Film.run_time%60)
+        # Hour -> Single digit
+        WHEN FLOOR(Film.run_time/60) < 10 THEN CONCAT('0', FLOOR(Film.run_time/60), ':', Film.run_time%60)
+        # Minutes -> Single digit
+        WHEN (Film.run_time%60) < 10 THEN CONCAT(FLOOR(Film.run_time/60), ':', '0', Film.run_time%60)
+        ELSE CONCAT(FLOOR(Film.run_time/60), ':', Film.run_time%60)
+    END AS run_time
+    # Concatenation Function --> combine 2 column into 1
+    , CONCAT(Director.first_name, ' ', Director.last_name) AS Director
+    FROM Film
+    INNER JOIN Director ON Director.id_director = Film.id_director;
+
+b. Liste des films dont la durée excède 2h15 classés par durée (du plus long au plus court)
+    SELECT title, run_time
+    FROM Film
+    WHERE run_time >= 135 
+    ORDER BY run_time DESC;
+
+c. Liste des films d’un réalisateur (en précisant l’année de sortie)
+    SELECT Film.title, Film.release_year, Director.first_name, Director.last_name
+    FROM Film
+    INNER JOIN Director
+    ON Film.id_director = Director.id_director
+    WHERE Director.id_director = 1;
+
+d. Nombre de films par genre (classés dans l’ordre décroissant)
+    SELECT COUNT(Film.id_film) AS Film, Genre.genre
+    FROM Film
+    INNER JOIN Genre_film
+    ON Film.id_film = Genre_film.id_film
+    INNER JOIN Genre
+    ON Genre_film.id_genre = Genre.id_genre
+    WHERE Genre.id_genre = 10;
+
+e. Nombre de films par réalisateur (classés dans l’ordre décroissant)
+    # About COUNT, MAX, MIN, SUM, AVG, ... Finctions and HAVING & GROUP BY in sql
+    # --> When we are using the functions above, we need to have GROUP BY
+    # --> When we use HAVING instead of WHERE --> The HAVING clause was added to SQL because the WHERE keyword cannot be used with aggregate functions.
+    SELECT COUNT(Film.id_film) AS Film, Director.first_name, Director.last_name
+    FROM Film
+    INNER JOIN Director
+    ON Film.id_director = Director.id_director
+    GROUP BY Director.id_director;
+    
+
+f. Casting d’un film en particulier (id_film) : nom, prénom des acteurs + sexe
+    SELECT Film.title, Actor.first_name, Actor.last_name, Actor.sex
+    FROM Film
+    INNER JOIN Casting
+    ON Film.id_film = Casting.id_film
+    INNER JOIN Actor
+    ON Casting.id_actor = Actor.id_actor
+    WHERE Film.id_film = 1;
+
+g. Films tournés par un acteur en particulier (id_acteur) avec leur rôle et l’année de sortie
+(du film le plus récent au plus ancien)
+    SELECT Actor.first_name, Actor.last_name, Role.role, Film.release_year
+    FROM Actor
+    INNER JOIN Casting
+    ON Actor.id_actor = Casting.id_actor
+    INNER JOIN Role
+    ON Role.id_role = Casting.id_role
+    INNER JOIN Film
+    ON Casting.id_film = Film.id_film
+    WHERE Actor.id_actor = 3
+    ORDER By Film.release_year DESC;
+
+h. Listes des personnes qui sont à la fois acteurs et réalisateurs
+    SELECT Director.first_name, Director.first_name
+    FROM Director
+    WHERE CONCAT( Director.first_name, ' ' , Director.last_name) IN (
+        SELECT CONCAT (Actor.first_name, ' ', Actor.last_name)
+        FROM Actor);
+
+i. Liste des films qui ont moins de 5 ans (classés du plus récent au plus ancien)
+    SELECT Film.release_year
+    FROM Film
+    WHERE DATEDIFF(Film.release_year, CURRENT_TIMESTAMP()) <= 5
+    ORDER BY Film.release_year DESC;
+
+j. Nombre d’hommes et de femmes parmi les acteurs
+    SELECT DISTINCT COUNT(Actor.sex) AS 'Number' , Actor.sex
+    FROM Actor
+    GROUP BY Actor.sex;
+
+k. Liste des acteurs ayant plus de 50 ans (âge révolu et non révolu)
+    SELECT Actor.first_name, Actor.last_name
+    FROM Actor
+    WHERE DATEDIFF(Actor.birth_date, CURRENT_TIMESTAMP()) > 50
+    ORDER BY Actor.birth_date DESC;
+
+l. Acteurs ayant joué dans 3 films ou plus
+    SELECT Actor.first_name, Actor.last_name, COUNT(Casting.id_actor) AS countFilms
+    FROM Actor
+    INNER JOIN Casting
+    ON Actor.id_actor = Casting.id_actor
+    GROUP BY Actor.id_actor
+    HAVING COUNT(Casting.id_actor) >= 3
+    ORDER BY countFilms DESC;
